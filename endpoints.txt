@@ -1,0 +1,36 @@
+ROUTE: /reservas
+VERB: post
+BODY:
+{
+  "dia": date,
+  "hora": time,
+  "duracion": Integer,
+  "tel": String,
+  "contacto": String,
+  "cancha_id": Integer
+}
+
+ROUTE: /reservas/nombre/{nombre:"cancha'n'"}
+VERB: get
+BODY: No
+
+ROUTE: /reservas/fecha/{fecha: "YYYY-MM-DD"}
+VERB: get
+BODY: No
+
+
+ROUTE: /reservas/delete/cancha/{cancha_id}/dia/{dia}/hora/{hora}
+VERB: delete
+BODY: No
+
+ROUTE: /reservas/update/cancha/{cancha_id}/dia/{dia}/hora/{hora}
+VERB: patch
+BODY: 
+{
+    dia: Optional[date]
+    hora: Optional[time] 
+    duracion: Optional[int]  
+    tel: Optional[str] 
+    contacto: Optional[str] 
+    cancha_id: Optional[int]
+}
