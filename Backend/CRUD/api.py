@@ -70,7 +70,7 @@ async def crear_reserva(reserva: ReservaCreate, session: Session = Depends(sessi
         if conflicto==2:
             raise HTTPException(status_code=400, detail="Ya existe una reserva en esa cancha y horario")
         elif conflicto==1:
-            raise HTTPException(status_code=401, detail="La duración de la reserva debe ser mayor a 0")
+            raise HTTPException(status_code=400, detail="La duración de la reserva debe ser mayor a 0")
         session.add(db_reserva)
         session.commit()
         session.refresh(db_reserva)
@@ -225,12 +225,6 @@ async def actualizar_reserva(cancha_id: int, dia: date, hora: str, db_reserva: R
             if value is not None:
                 setattr(reserva, key, value)
         session.commit()
-
-
-
-
-
-
 
         session.refresh(reserva)
         response = {
