@@ -5,9 +5,7 @@ from ..clases.pydanticFold.Reserva import ReservaUpdate, ReservaCreate, Reserva,
 from ..clases.sqlAlchemy.Reserva import Reserva as SQLAlchemyReserva
 from ..clases.sqlAlchemy import Cancha as SQLAlchemyCancha
 from typing import List
-from datetime import date, timedelta, datetime
-from sqlalchemy.types import Time
-from sqlalchemy.sql.expression import and_, or_, not_
+from datetime import date, timedelta, datetime, time as Time
 from sqlalchemy import select, join
 from fastapi.middleware.cors import CORSMiddleware
 from ..clases.pydanticFold.Reserva import ReservaQuery
@@ -41,6 +39,9 @@ app.add_middleware(
 async def crear_reserva(reserva: ReservaCreate, session: Session = Depends(session_factory)):
     db_reserva = SQLAlchemyReserva(**reserva.model_dump())
     try:
+        if db_reserva.dia < date.today() or (db_reserva.dia == date.today() and db_reserva.hora <= datetime.now().time()):
+            raise HTTPException(status_code=400, detail="La reserva no puede ser para un día pasado")
+
          # Convertir la hora de inicio y fin de la nueva reserva
         timedelta_reserva_nueva_inicio = datetime.combine(datetime.today(), reserva.hora)
         reserva_nueva_fin = (timedelta_reserva_nueva_inicio + timedelta(hours=reserva.duracion)).time()
@@ -95,7 +96,7 @@ async def crear_reserva(reserva: ReservaCreate, session: Session = Depends(sessi
 @app.get("/reservas/fecha/{dia}", response_model=ReservaQuery)
 async def obtener_reservas_por_fecha(dia: date, session: Session = Depends(session_factory)):
     try:
-        reservas = session.query(SQLAlchemyReserva).filter(SQLAlchemyReserva.dia == dia).all()
+        reservas = session.query(SQLAlchemyReserva).filter(SQLAlchemyReserva.dia == dia).order_by(asc(SQLAlchemyReserva.dia), asc(SQLAlchemyReserva.hora)).all()
         reservaQuery={
             "message": "Reservas obtenidas correctamente",
             "data": reservas,
@@ -111,7 +112,7 @@ async def obtener_reservas_por_fecha(dia: date, session: Session = Depends(sessi
 # http://127.0.0.1:8000/reservas/fecha/2024-11-02
 
 
-from sqlalchemy import select, join
+from sqlalchemy import select, join, asc
 from ..clases.sqlAlchemy import Reserva as SQLAlchemyReserva, Cancha as SQLAlchemyCancha
 from ..clases.pydanticFold.Reserva import ReservaBase
 
@@ -123,7 +124,7 @@ async def obtener_reservas_por_nombre(nombre: str, session: Session = Depends(se
             select(SQLAlchemyReserva.dia, SQLAlchemyReserva.hora, 
                    SQLAlchemyReserva.duracion, SQLAlchemyReserva.tel, SQLAlchemyReserva.contacto, SQLAlchemyCancha.nombre, SQLAlchemyReserva.cancha_id)
             .select_from(join(SQLAlchemyReserva, SQLAlchemyCancha, SQLAlchemyReserva.cancha_id == SQLAlchemyCancha.id))
-            .where(SQLAlchemyCancha.nombre == nombre)
+            .where(SQLAlchemyCancha.nombre == nombre).order_by(asc(SQLAlchemyReserva.dia), asc(SQLAlchemyReserva.hora))
             )
         reservas = session.execute(stmt).fetchall() 
         reservaQuery={
@@ -180,14 +181,13 @@ async def actualizar_reserva(cancha_id: int, dia: date, hora: str, db_reserva: R
     try:
         reserva = session.query(SQLAlchemyReserva).filter(SQLAlchemyReserva.cancha_id == cancha_id
                                                           ).filter(SQLAlchemyReserva.dia == dia
-                                                                   ).filter(SQLAlchemyReserva.hora == hora).first()
+                                                                   ).filter(SQLAlchemyReserva.hora == hora).all()
         if reserva is None:
             raise HTTPException(status_code=404, detail="Reserva no encontrada")
-        for key, value in db_reserva.model_dump().items():
-            if value is not None:
-                setattr(reserva, key, value)
-        session.commit()
+        
 
+        if db_reserva.dia < date.today() or (db_reserva.dia == date.today() and db_reserva.hora <= datetime.now().time()):
+            raise HTTPException(status_code=400, detail="La reserva no puede ser para un día pasado")
 
 
          # Convertir la hora de inicio y fin de la nueva reserva
@@ -218,9 +218,13 @@ async def actualizar_reserva(cancha_id: int, dia: date, hora: str, db_reserva: R
         if conflicto==2:
             raise HTTPException(status_code=400, detail="Ya existe una reserva en esa cancha y horario")
         elif conflicto==1:
-            raise HTTPException(status_code=401, detail="La duración de la reserva debe ser mayor a 0")
+            raise HTTPException(status_code=400, detail="La duración de la reserva debe ser mayor a 0")
 
 
+        for key, value in db_reserva.model_dump().items():
+            if value is not None:
+                setattr(reserva, key, value)
+        session.commit()
 
 
 
