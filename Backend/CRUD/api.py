@@ -1,6 +1,6 @@
 from ..common.common import session_factory
 from fastapi import FastAPI, HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from ..clases.pydanticFold.Reserva import ReservaUpdate, ReservaCreate, Reserva, ReservaBase
 from ..clases.sqlAlchemy.Reserva import Reserva as SQLAlchemyReserva
 from ..clases.sqlAlchemy import Cancha as SQLAlchemyCancha
@@ -15,8 +15,6 @@ origins = [
     "http://127.0.0.1:5173",
 ]
 
-
-
 app=FastAPI()
 
 app.add_middleware( 
@@ -26,8 +24,6 @@ app.add_middleware(
     allow_methods=["*"], 
     allow_headers=["*"], 
     )
-
-
 
 
 #POST
@@ -96,10 +92,30 @@ async def crear_reserva(reserva: ReservaCreate, session: Session = Depends(sessi
 @app.get("/reservas/fecha/{dia}", response_model=ReservaQuery)
 async def obtener_reservas_por_fecha(dia: date, session: Session = Depends(session_factory)):
     try:
-        reservas = session.query(SQLAlchemyReserva).filter(SQLAlchemyReserva.dia == dia).order_by(asc(SQLAlchemyReserva.dia), asc(SQLAlchemyReserva.hora)).all()
+        # Incluimos la relación con la tabla Canchas para obtener la información de "techada"
+        reservas = session.query(SQLAlchemyReserva).options(joinedload(SQLAlchemyReserva.cancha)).filter(
+            SQLAlchemyReserva.dia == dia
+        ).order_by(
+            asc(SQLAlchemyReserva.dia), asc(SQLAlchemyReserva.hora)
+        ).all()
+
+        # Convertimos los resultados en un formato más conveniente si es necesario
+        reservas_con_techada = [
+            {
+                "id": reserva.id,
+                "dia": reserva.dia,
+                "hora": reserva.hora,
+                "duracion": reserva.duracion,
+                "tel": reserva.tel,
+                "contacto": reserva.contacto,
+                "cancha_id": reserva.cancha_id,
+                "techada": reserva.cancha.techada if reserva.cancha else None,  # Incluye el atributo techada
+            }
+            for reserva in reservas
+        ]
         reservaQuery={
             "message": "Reservas obtenidas correctamente",
-            "data": reservas,
+            "data": reservas_con_techada,
             "status": 200
         }
         return reservaQuery
@@ -122,7 +138,7 @@ async def obtener_reservas_por_nombre(nombre: str, session: Session = Depends(se
     try:
         stmt = (
             select(SQLAlchemyReserva.dia, SQLAlchemyReserva.hora, 
-                   SQLAlchemyReserva.duracion, SQLAlchemyReserva.tel, SQLAlchemyReserva.contacto, SQLAlchemyCancha.nombre, SQLAlchemyReserva.cancha_id)
+                   SQLAlchemyReserva.duracion, SQLAlchemyReserva.tel, SQLAlchemyReserva.contacto, SQLAlchemyCancha.nombre, SQLAlchemyReserva.cancha_id, SQLAlchemyCancha.techada)
             .select_from(join(SQLAlchemyReserva, SQLAlchemyCancha, SQLAlchemyReserva.cancha_id == SQLAlchemyCancha.id))
             .where(SQLAlchemyCancha.nombre == nombre).order_by(asc(SQLAlchemyReserva.dia), asc(SQLAlchemyReserva.hora))
             )
@@ -140,6 +156,33 @@ async def obtener_reservas_por_nombre(nombre: str, session: Session = Depends(se
         session.close()
 # http://127.0.0.1:8000/reservas/nombre/cancha1
 
+# Consultar Reservas por fecha y nombre
+@app.get("/reservas/fecha/{dia}/nombre/{nombre}", response_model=ReservaQuery)
+async def obtener_reservas_por_fecha_y_nombre(dia: date, nombre: str, session: Session = Depends(session_factory)):
+    try:
+        stmt = (
+            select(SQLAlchemyReserva.dia, SQLAlchemyReserva.hora, 
+                SQLAlchemyReserva.duracion, SQLAlchemyReserva.tel, SQLAlchemyReserva.contacto, SQLAlchemyCancha.nombre, SQLAlchemyReserva.cancha_id, SQLAlchemyCancha.techada)
+            .select_from(join(SQLAlchemyReserva, SQLAlchemyCancha, SQLAlchemyReserva.cancha_id == SQLAlchemyCancha.id))
+            .where(SQLAlchemyReserva.dia == dia, SQLAlchemyCancha.nombre == nombre)
+            .order_by(asc(SQLAlchemyReserva.dia), asc(SQLAlchemyReserva.hora))
+        )
+        reservas = session.execute(stmt).fetchall()
+
+
+        reservaQuery={
+            "message": "Reservas obtenidas correctamente",
+            "data": reservas,
+            "status": 200
+        }
+        return reservaQuery
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+    finally:
+        session.close()
+# http://127.0.0.1:8000/reservas/fecha/2024-11-02
 
 
 

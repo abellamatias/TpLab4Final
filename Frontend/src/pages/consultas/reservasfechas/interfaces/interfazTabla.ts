@@ -5,6 +5,7 @@ export interface IReserva {
         tel: String,
         contacto: String,
         cancha_id: Number,
+        techada:boolean
     }
 
 export interface IReservasResponse{
@@ -14,8 +15,9 @@ export interface IReservasResponse{
 }
 
 export interface IParamsConsulta{
-    valor: string;
-    selector: boolean;
+    fecha?: string;
+    nombre?: string;
+    selector: number;
 }
 
 export interface IEditarReserva{

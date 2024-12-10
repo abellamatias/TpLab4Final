@@ -15,19 +15,19 @@ const Reservas = () => {
   const [open, setOpen] = useState(false);
   const [openModalConfirmar, setOpenModalConfirmar] = useState(false);
   const [openUpdate, setOpenUpdate] = useState(false);
-  const [tempValor, setTempValor] = useState<IReserva>({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0});
+  const [tempValor, setTempValor] = useState<IReserva>({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0, techada:false});
 
 
-  const handleSubmitConsulta = async (valor: string, selector: boolean) => {
+  const handleSubmitConsulta = async (selector: number, fecha: string, nombre: string) => {
     const regexNombre = /^cancha[1-9][0-9]*$/;
     const regexFecha = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/;
 
-    if((!selector && !regexFecha.test(valor) ))
+    if(((selector == 2 || selector==0)&& !regexFecha.test(fecha) )) 
       alert("La fecha no es valida");
-    else if((selector && !regexNombre.test(valor)))
+    else if(((selector == 2 || selector==1)&& !regexNombre.test(nombre)))
       alert("El nombre de la cancha no es valido");
     else
-    await ConsultaReserva(valor, selector);    
+    await ConsultaReserva({fecha, nombre, selector});
     }
     
     const handleSubmitAdd = async (values:FormikValues) => {
@@ -61,7 +61,7 @@ const Reservas = () => {
     const handleDelete = async () => {
       setOpenModalConfirmar(false);
       await EliminarReserva(tempValor);
-      setTempValor({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0});
+      setTempValor({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0, techada:false});
     }
 
   return (
@@ -69,8 +69,8 @@ const Reservas = () => {
       <Filter handleSubmit={handleSubmitConsulta} /> 
       {rows && <Tabla rows={rows} handleAdd={()=>{setOpen(true)}} handleDelete={(handleDeleteOpenModal)} handleUpdate={handleUpdate}/>}
       { open && (<ModalAlta open={open} handleClose={()=>{setOpen(false)}} handleSubmit={handleSubmitAdd}/>)}
-      { openUpdate && (<ModalUpdate open={openUpdate} handleClose={()=>{setOpenUpdate(false); setTempValor({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0});}} handleSubmit={handleUpdateAccept}/>)}
-      { openModalConfirmar && (<ModalConfirmacion open={openModalConfirmar} mensaje="Eliminar reserva" handleClose={()=>{setOpenModalConfirmar(false); setTempValor({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0});}} handleSubmit={handleDelete}/>)}
+      { openUpdate && (<ModalUpdate open={openUpdate} handleClose={()=>{setOpenUpdate(false); setTempValor({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0, techada:false});}} handleSubmit={handleUpdateAccept}/>)}
+      { openModalConfirmar && (<ModalConfirmacion open={openModalConfirmar} mensaje="Eliminar reserva" handleClose={()=>{setOpenModalConfirmar(false); setTempValor({dia:'', hora:'', duracion:0, tel:'', contacto:'', cancha_id:0, techada:false});}} handleSubmit={handleDelete}/>)}
       
     </div>
   )

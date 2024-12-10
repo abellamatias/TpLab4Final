@@ -22,3 +22,12 @@ export const cellBtnStyled = {
     whidth:'100%',
     height:'100%'
 }
+
+export const toggleButtonStyled = {
+    color: 'white',
+    backgroundColor: '#212121',
+    border: '1px solid #212121',
+    height:'60px',
+    width:'100%',
+    margin:'20px', 
+}

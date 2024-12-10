@@ -10,9 +10,15 @@ class ReservaBase(BaseModel):
     tel: str
     contacto: str   
     cancha_id: int
+    techada:bool
 
 class ReservaCreate(ReservaBase):
-    pass
+    dia: date
+    hora: time
+    duracion: int
+    tel: str
+    contacto: str   
+    cancha_id: int
 
 class Reserva(BaseModel): 
     message: str

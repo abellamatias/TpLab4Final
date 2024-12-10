@@ -21,6 +21,15 @@ export const consultaReservasNombre = async (nombre:string):Promise<IReservasRes
     }
 }
 
+export const consultaFechaYCancha = async (fecha:string, nombre:string):Promise<IReservasResponse> => {
+    try{
+        const response = await instance.get(`/reservas/fecha/${fecha}/nombre/${nombre}`);
+        return response.data;
+    }catch(error:any){
+        return { status: error.response.status, message: error.response.statusText};
+    }
+}
+
 export const agregarReserva = async (reserva:IReserva):Promise<IReservasResponse> => {
     try{
         const response = await instance.post(`/reservas`, reserva);

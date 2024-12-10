@@ -35,6 +35,7 @@ export default function Tabla({rows, handleAdd, handleUpdate, handleDelete}: Inp
                   <TableCell sx={cellStyled} align="right">Tel</TableCell>
                   <TableCell sx={cellStyled} align="right">Contacto</TableCell>
                   <TableCell sx={cellStyled} align="right">Cancha</TableCell> 
+                  <TableCell sx={cellStyled} align="right">Techada</TableCell> 
                   <TableCell sx={cellStyled} align="center">Modificar</TableCell>
                   <TableCell sx={cellStyled} align="center">Eliminar</TableCell>
 
@@ -50,7 +51,8 @@ export default function Tabla({rows, handleAdd, handleUpdate, handleDelete}: Inp
                         <TableCell sx={{color:'white'}} align="right">{row.duracion.toString()}</TableCell>
                         <TableCell sx={{color:'white'}} align="right">{row.tel}</TableCell>
                         <TableCell sx={{color:'white'}} align="right">{row.contacto}</TableCell>
-                        <TableCell sx={{color:'white'}} align="right">{row.cancha_id.toString()}</TableCell>
+                        <TableCell sx={{color:'white'}} align="right">{row.cancha_id.toString()}</TableCell>                        
+                        <TableCell sx={{color:'white'}} align="right">{row.techada?'Techada':'No Techada'}</TableCell>
                         <TableCell sx={{color:'white'}} align="center"><Button onClick={()=>{handleUpdate(row)}} sx={{...cellBtnStyled, color:'blue'}}><EditIcon/></Button></TableCell>
                         <TableCell sx={{color:'white'}} align="center"><Button onClick={()=>{handleDelete(row)}} sx={{...cellBtnStyled, color:'red'}}><DeleteIcon/></Button></TableCell>
                       </TableRow>
